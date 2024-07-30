@@ -10,6 +10,8 @@ import {
 import { getAuth, loginUser } from '@/services/api/graphql';
 import { usePathname, useRouter } from 'next/navigation';
 import { useToastApi } from '@/hooks/useToastApi';
+import { jwtDecode } from 'jwt-decode';
+import dayjs from 'dayjs';
 
 interface AuthContextProps {
   user: User | null;
@@ -18,8 +20,10 @@ interface AuthContextProps {
 }
 
 interface User {
+  email: string;
   userId: string;
   role: string;
+  exp: number;
 }
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
@@ -39,9 +43,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     if (PUBLIC_ROUTES.includes(pathname)) return;
     const loadUser = async () => {
       try {
-        const user = localStorage.getItem('user')
-          ? JSON.parse(localStorage.getItem('user') as string)
-          : null;
+        const user = decodeToken();
+
         if (!user) {
           toast.open({
             key: 'auth',
@@ -52,7 +55,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
           logout();
           return;
         }
-        if (!user?.token && user) {
+
+        if (dayjs.unix(user.exp) < dayjs() && user) {
           toast.open({
             key: 'auth',
             type: 'error',
@@ -62,10 +66,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
           logout();
           return;
         }
-        await getAuth({
-          token: user.token,
-          userId: parseInt(user.userId),
-        });
+        await getAuth(parseInt(user.userId));
+        setUser(user);
         toast.open({
           key: 'auth',
           type: 'success',
@@ -73,8 +75,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
           duration: 2,
         });
       } catch (error) {
-        console.log(error);
-
         if (error instanceof Error)
           toast.open({
             key: 'auth',
@@ -92,15 +92,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const login = async (email: string, password: string) => {
     const response = await loginUser(email, password);
     if (response.data) {
-      localStorage.setItem('user', JSON.stringify(response.data.login));
-      setUser(response.data.login);
-      router.push('/protected-page');
+      localStorage.setItem('token', response.data.login.token);
+      const user = decodeToken();
+      setUser(user);
+      router.push('/dashboard');
     }
   };
 
   const logout = async () => {
     setUser(null);
-    localStorage.setItem('user', '');
+    localStorage.removeItem('token');
     router.push('/login');
   };
 
@@ -117,4 +118,14 @@ export const useAuth = (): AuthContextProps => {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
+};
+
+export const getToken = () => {
+  const token = localStorage.getItem('token') as string;
+  return token as string;
+};
+
+export const decodeToken = () => {
+  const user: User = jwtDecode(getToken());
+  return user;
 };

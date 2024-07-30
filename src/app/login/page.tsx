@@ -8,7 +8,8 @@ import Paragraph from 'antd/es/typography/Paragraph';
 import Title from 'antd/es/typography/Title';
 import Link from 'next/link';
 import { useState } from 'react';
-import { useAuth } from '../context/authContext';
+import { useAuth } from '../context/AuthContext';
+import { useRouter } from 'next/navigation';
 
 type FieldType = {
   email?: string;
@@ -16,6 +17,9 @@ type FieldType = {
 };
 
 const Login = () => {
+  const router = useRouter();
+  const { user } = useAuth();
+  if (user) router.push('/dashboard');
   const [isLoading, setIsLoading] = useState(false);
 
   const toast = useToastApi();

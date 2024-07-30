@@ -1,6 +1,6 @@
 'use client';
 import { Layout } from 'antd';
-import TrackShipment from './components/trackShipment';
+import TrackShipment from './components/TrackShipment';
 
 const { Content } = Layout;
 

@@ -9,6 +9,8 @@ import Paragraph from 'antd/es/typography/Paragraph';
 import Title from 'antd/es/typography/Title';
 import Link from 'next/link';
 import { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { useRouter } from 'next/navigation';
 
 type FieldType = {
   name?: string;
@@ -18,7 +20,10 @@ type FieldType = {
   address?: string;
 };
 
-const Login = () => {
+const Register = () => {
+  const router = useRouter();
+  const { user } = useAuth();
+  if (user) router.push('/dashboard');
   const [isLoading, setIsLoading] = useState(false);
 
   const toast = useToastApi();
@@ -141,4 +146,4 @@ const Login = () => {
     </Content>
   );
 };
-export default Login;
+export default Register;

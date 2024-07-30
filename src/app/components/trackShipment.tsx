@@ -14,6 +14,7 @@ import {
   Typography,
 } from 'antd';
 import FormItem from 'antd/es/form/FormItem';
+import dayjs from 'dayjs';
 import { useState } from 'react';
 
 const TrackShipment = () => {
@@ -52,15 +53,13 @@ const TrackShipment = () => {
     {
       key: '5',
       label: 'Shipment Date',
-      children: trackingData?.shipmentDate
-        ? new Date((trackingData?.shipmentDate).toString()).toUTCString()
-        : '',
+      children: dayjs(parseInt(trackingData?.shipmentDate)).toString(),
       span: 24,
     },
     {
       key: '6',
       label: 'Expected Delivery Date',
-      children: trackingData?.expectedDeliveryDate,
+      children: dayjs(parseInt(trackingData?.expectedDeliveryDate)).toString(),
       span: 24,
     },
     {
@@ -84,7 +83,7 @@ const TrackShipment = () => {
         <>
           {trackingData?.statusHistory.map((history: any) => (
             <>
-              {history.updatedAt}: {history.status}
+              {dayjs(parseInt(history.updatedAt)).toString()}: {history.status}
               <br />
             </>
           ))}

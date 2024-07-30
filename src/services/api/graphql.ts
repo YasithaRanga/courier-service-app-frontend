@@ -1,3 +1,4 @@
+import { getToken } from '@/app/context/AuthContext';
 import { initializeApollo } from '@/lib/apollo';
 import { gql } from '@apollo/client';
 const client = initializeApollo();
@@ -89,13 +90,7 @@ export const registerUser = async (
   });
 };
 
-export const getAuth = async ({
-  token,
-  userId,
-}: {
-  token: string;
-  userId: number;
-}) => {
+export const getAuth = async (userId: number) => {
   return await client.query({
     query: gql`
       query GetAuth($userId: Int!) {
@@ -110,7 +105,117 @@ export const getAuth = async ({
     `,
     variables: {
       userId,
-      token,
+      token: getToken(),
+    },
+  });
+};
+
+export const getShipmentsByUser = async (userId: number | undefined) => {
+  return await client.query({
+    query: gql`
+      query GetShipmentsByUser($userId: Int!) {
+        getShipmentsByUser(userId: $userId) {
+          id
+          senderName
+          senderAddress
+          recipientName
+          recipientAddress
+          packageDescription
+          packageDimensions
+          expectedDeliveryDate
+          shipmentStatus
+          trackingNumber
+          shippingMethod
+          insuranceValue
+          specialInstructions
+          shipmentCost
+          paymentMethod
+        }
+      }
+    `,
+    variables: {
+      userId,
+      token: getToken(),
+    },
+  });
+};
+
+export const getShipments = async () => {
+  console.log('working');
+
+  return await client.query({
+    query: gql`
+      query {
+        getShipments {
+          id
+          senderName
+          senderAddress
+          recipientName
+          recipientAddress
+          packageDescription
+          packageDimensions
+          expectedDeliveryDate
+          shipmentStatus
+          trackingNumber
+          shippingMethod
+          insuranceValue
+          specialInstructions
+          shipmentCost
+          paymentMethod
+        }
+      }
+    `,
+    variables: {
+      token: getToken(),
+    },
+  });
+};
+
+export const deleteShipment = async (id: number) => {
+  return await client.mutate({
+    mutation: gql`
+      mutation DeleteShipment($id: Int!) {
+        deleteShipment(id: $id) {
+          id
+          shipmentStatus
+          trackingNumber
+        }
+      }
+    `,
+    variables: {
+      id,
+      token: getToken(),
+    },
+  });
+};
+
+export const updateShipmentStatus = async ({
+  id,
+  status,
+}: {
+  id: number;
+  status: string;
+}) => {
+  return await client.mutate({
+    mutation: gql`
+      mutation UpdateShipmentStatus($id: ID!, $status: String!) {
+        updateShipmentStatus(
+          statusUpdateInput: { shipmentId: $id, status: $status }
+        ) {
+          id
+          shipmentStatus
+          statusHistory {
+            id
+            status
+            updatedAt
+          }
+        }
+      }
+    `,
+    variables: {
+      id,
+      status,
+      token: getToken(),
     },
   });
 };
