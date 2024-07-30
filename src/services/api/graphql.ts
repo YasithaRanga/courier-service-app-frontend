@@ -1,4 +1,5 @@
 import { getToken } from '@/app/context/AuthContext';
+import { CreateShipmentType } from '@/app/dashboard/page';
 import { initializeApollo } from '@/lib/apollo';
 import { gql } from '@apollo/client';
 const client = initializeApollo();
@@ -120,6 +121,7 @@ export const getShipmentsByUser = async (userId: number | undefined) => {
           senderAddress
           recipientName
           recipientAddress
+          packageWeight
           packageDescription
           packageDimensions
           expectedDeliveryDate
@@ -141,8 +143,6 @@ export const getShipmentsByUser = async (userId: number | undefined) => {
 };
 
 export const getShipments = async () => {
-  console.log('working');
-
   return await client.query({
     query: gql`
       query {
@@ -152,6 +152,7 @@ export const getShipments = async () => {
           senderAddress
           recipientName
           recipientAddress
+          packageWeight
           packageDescription
           packageDimensions
           expectedDeliveryDate
@@ -215,6 +216,79 @@ export const updateShipmentStatus = async ({
     variables: {
       id,
       status,
+      token: getToken(),
+    },
+  });
+};
+
+export const createShipment = async (formData: CreateShipmentType) => {
+  return await client.mutate({
+    mutation: gql`
+      mutation CreateShipment(
+        $recipientName: String!
+        $recipientAddress: String!
+        $packageDescription: String!
+        $packageWeight: Float!
+        $packageDimensions: String!
+        $expectedDeliveryDate: String!
+        $shipmentStatus: String!
+        $trackingNumber: String!
+        $shippingMethod: String!
+        $insuranceValue: Float!
+        $specialInstructions: String
+        $shipmentCost: Float!
+        $paymentMethod: String!
+      ) {
+        createShipment(
+          shipmentInput: {
+            recipientName: $recipientName
+            recipientAddress: $recipientAddress
+            packageDescription: $packageDescription
+            packageWeight: $packageWeight
+            packageDimensions: $packageDimensions
+            expectedDeliveryDate: $expectedDeliveryDate
+            shipmentStatus: $shipmentStatus
+            trackingNumber: $trackingNumber
+            shippingMethod: $shippingMethod
+            insuranceValue: $insuranceValue
+            specialInstructions: $specialInstructions
+            shipmentCost: $shipmentCost
+            paymentMethod: $paymentMethod
+          }
+        ) {
+          id
+          senderName
+          senderAddress
+          recipientName
+          recipientAddress
+          packageDescription
+          packageWeight
+          packageDimensions
+          expectedDeliveryDate
+          shipmentStatus
+          trackingNumber
+          shippingMethod
+          insuranceValue
+          specialInstructions
+          shipmentCost
+          paymentMethod
+        }
+      }
+    `,
+    variables: {
+      recipientName: formData.recipientName,
+      recipientAddress: formData.recipientAddress,
+      packageDescription: formData.packageDescription,
+      packageWeight: formData.packageWeight,
+      packageDimensions: formData.packageDimensions,
+      expectedDeliveryDate: formData.expectedDeliveryDate,
+      shipmentStatus: formData.shipmentStatus,
+      trackingNumber: formData.trackingNumber,
+      shippingMethod: formData.shippingMethod,
+      insuranceValue: formData.insuranceValue,
+      specialInstructions: formData.specialInstructions,
+      shipmentCost: formData.shipmentCost,
+      paymentMethod: formData.paymentMethod,
       token: getToken(),
     },
   });

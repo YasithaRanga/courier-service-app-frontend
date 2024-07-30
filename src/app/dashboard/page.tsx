@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  createShipment,
   deleteShipment,
   getShipments,
   getShipmentsByUser,
@@ -14,9 +15,11 @@ import {
 } from '@ant-design/icons';
 import {
   Button,
+  DatePicker,
   Flex,
   Form,
   Input,
+  InputNumber,
   Modal,
   Table,
   TableColumnsType,
@@ -37,6 +40,7 @@ type FieldType = {
   senderAddress: string;
   recipientName: string;
   recipientAddress: string;
+  packageWeight: string;
   packageDescription: string;
   packageDimensions: string;
   expectedDeliveryDate: string;
@@ -46,6 +50,22 @@ type FieldType = {
   insuranceValue: string;
   specialInstructions: string;
   shipmentCost: string;
+  paymentMethod: string;
+};
+
+export type CreateShipmentType = {
+  recipientName: string;
+  recipientAddress: string;
+  packageWeight: number;
+  packageDescription: string;
+  packageDimensions: string;
+  expectedDeliveryDate: string;
+  shipmentStatus: string;
+  trackingNumber: string;
+  shippingMethod: string;
+  insuranceValue: number;
+  specialInstructions?: string;
+  shipmentCost: number;
   paymentMethod: string;
 };
 
@@ -62,9 +82,11 @@ const Dashboard = () => {
   const [shipments, setShipments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isOpenModal, setIsOpenModal] = useState(false);
+  const [isCreateOpenModal, setIsCreateOpenModal] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<number>();
 
   const [form] = useForm();
+  const [createform] = useForm();
 
   const fetchData = async () => {
     if (!user) {
@@ -130,6 +152,7 @@ const Dashboard = () => {
             content: 'Shipment status updated successfully',
             duration: 2,
           });
+        form.resetFields();
         window.location.reload();
       } catch (error) {
         if (error instanceof Error)
@@ -143,6 +166,31 @@ const Dashboard = () => {
     }
   };
 
+  const createShipmentSubmit = async (formData: CreateShipmentType) => {
+    if (formData) {
+      try {
+        const result = await createShipment(formData);
+        if (result)
+          toast.open({
+            key: 'createShipment',
+            type: 'success',
+            content: 'Shipment status created successfully',
+            duration: 2,
+          });
+        createform.resetFields();
+        window.location.reload();
+      } catch (error) {
+        if (error instanceof Error)
+          toast.open({
+            key: 'createShipment',
+            type: 'error',
+            content: 'Shipment creation failed',
+            duration: 2,
+          });
+      }
+    }
+  };
+
   const dataSource = shipments.map((shipment: FieldType, index) => ({
     key: index,
     id: shipment.id,
@@ -150,6 +198,7 @@ const Dashboard = () => {
     senderAddress: shipment.senderAddress,
     recipientName: shipment.recipientName,
     recipientAddress: shipment.recipientAddress,
+    packageWeight: shipment.packageWeight,
     packageDescription: shipment.packageDescription,
     packageDimensions: shipment.packageDimensions,
     expectedDeliveryDate: shipment.expectedDeliveryDate,
@@ -194,6 +243,12 @@ const Dashboard = () => {
       dataIndex: 'recipientAddress',
       key: 'recipientAddress',
       width: 250,
+    },
+    {
+      title: 'Package Weight(kg)',
+      dataIndex: 'packageWeight',
+      key: 'packageWeight',
+      width: 150,
     },
     {
       title: 'Package Description',
@@ -297,7 +352,11 @@ const Dashboard = () => {
       <Flex justify='end' style={{ margin: 20 }} gap={10}>
         {user ? (
           parseInt(user?.role) === 1 ? (
-            <Button type='primary' icon={<PlusOutlined />}>
+            <Button
+              type='primary'
+              icon={<PlusOutlined />}
+              onClick={() => setIsCreateOpenModal(true)}
+            >
               Create Shipment
             </Button>
           ) : (
@@ -339,6 +398,161 @@ const Dashboard = () => {
             <FormItem style={{ margin: 0 }}>
               <Button type='primary' htmlType='submit'>
                 Update
+              </Button>
+            </FormItem>
+          </Flex>
+        </Form>
+      </Modal>
+      <Modal
+        title={'Create a Shipment'}
+        open={isCreateOpenModal}
+        onCancel={() => setIsCreateOpenModal(false)}
+        footer={false}
+      >
+        <Form
+          form={createform}
+          layout='vertical'
+          onFinish={createShipmentSubmit}
+        >
+          <FormItem
+            label='Recipient Name'
+            name={'recipientName'}
+            rules={[{ required: true, message: 'Recipient Name is required' }]}
+          >
+            <Input placeholder='Recipient Name' />
+          </FormItem>
+
+          <FormItem
+            label='Recipient Address'
+            name={'recipientAddress'}
+            rules={[
+              { required: true, message: 'Recipient Address is required' },
+            ]}
+          >
+            <Input placeholder='Recipient Address' />
+          </FormItem>
+
+          <FormItem
+            label='Package Weight'
+            name={'packageWeight'}
+            rules={[
+              { required: true, message: 'Package Weight is required' },
+              { type: 'number', message: 'Package Weight should be numerical' },
+            ]}
+          >
+            <InputNumber
+              placeholder='Package Weight'
+              style={{ width: '100%' }}
+            />
+          </FormItem>
+
+          <FormItem
+            label='Package Description'
+            name={'packageDescription'}
+            rules={[
+              { required: true, message: 'Package Description is required' },
+            ]}
+          >
+            <Input placeholder='Package Description' />
+          </FormItem>
+
+          <FormItem
+            label='Package Dimensions'
+            name={'packageDimensions'}
+            rules={[
+              { required: true, message: 'Package Dimensions is required' },
+            ]}
+          >
+            <Input placeholder='Package Dimensions' />
+          </FormItem>
+
+          <FormItem
+            label='Expected Delivery Date'
+            name={'expectedDeliveryDate'}
+            rules={[
+              { required: true, message: 'Expected Delivery Date is required' },
+            ]}
+          >
+            <DatePicker
+              style={{ width: '100%' }}
+              placeholder='Expected Delivery Date'
+            />
+          </FormItem>
+
+          <FormItem
+            label='Shipment Status'
+            name={'shipmentStatus'}
+            rules={[{ required: true, message: 'Shipment Status is required' }]}
+          >
+            <Input placeholder='Shipment Status' />
+          </FormItem>
+
+          <FormItem
+            label='Tracking Number'
+            name={'trackingNumber'}
+            rules={[{ required: true, message: 'Tracking Number is required' }]}
+          >
+            <Input placeholder='Tracking Number' />
+          </FormItem>
+
+          <FormItem
+            label='Shipping Method'
+            name={'shippingMethod'}
+            rules={[{ required: true, message: 'Shipping Method is required' }]}
+          >
+            <Input placeholder='Shipping Method' />
+          </FormItem>
+
+          <FormItem
+            label='Insurance Value'
+            name={'insuranceValue'}
+            rules={[
+              { required: true, message: 'Insurance Value is required' },
+              {
+                type: 'number',
+                message: 'Insurance Value should be numerical',
+              },
+            ]}
+          >
+            <InputNumber
+              placeholder='Insurance Value'
+              style={{ width: '100%' }}
+            />
+          </FormItem>
+
+          <FormItem label='Special Instructions' name={'specialInstructions'}>
+            <Input placeholder='Special Instructions' />
+          </FormItem>
+
+          <FormItem
+            label='Shipment Cost'
+            name={'shipmentCost'}
+            rules={[
+              { required: true, message: 'Shipment Cost is required' },
+              { type: 'number', message: 'Shipment Cost should be numerical' },
+            ]}
+          >
+            <InputNumber
+              placeholder='Shipment Cost'
+              style={{ width: '100%' }}
+            />
+          </FormItem>
+
+          <FormItem
+            label='Payment Method'
+            name={'paymentMethod'}
+            rules={[{ required: true, message: 'Payment Method is required' }]}
+          >
+            <Input placeholder='Payment Method' />
+          </FormItem>
+
+          <Flex gap={10} justify='end'>
+            <FormItem style={{ margin: 0 }}>
+              <Button htmlType='reset'>Cancel</Button>
+            </FormItem>
+            <FormItem style={{ margin: 0 }}>
+              <Button type='primary' htmlType='submit'>
+                Create
               </Button>
             </FormItem>
           </Flex>
